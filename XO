@@ -1,0 +1,261 @@
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Main {
+    private static final char X = 'X';
+    private static final char O = 'O';
+    private static final char SPACE = ' ';
+    private static final int FIELD_SIZE = 3;
+    public static void main(String[] args) throws IOException {
+//        String s = getInitialField();
+        String s = "         ";
+        printField(s);
+
+        do {
+            boolean incorrectCoordinateInput;
+            do {
+                incorrectCoordinateInput = false;
+
+                Coordinate userInput = getUserInput();
+
+                Coordinate nativeCoordinate = transformUserCoordinateToNative(userInput);
+
+                try {
+                    s = addSymbolToField(nativeCoordinate, s);
+                } catch (Exception e) {
+                    System.out.println(e.getMessage());
+                    incorrectCoordinateInput = true;
+                }
+
+            } while (incorrectCoordinateInput);
+
+            printField(s);
+
+        } while (checkField(s));
+    }
+
+    private static String getInitialField() throws IOException {
+        System.out.println("Enter cells: ");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        return reader.readLine();
+    }
+
+    private static String addSymbolToField(Coordinate nativeCoordinate, String currentField) throws Exception {
+        char inputSymbol = checkWhatSymbolWeShouldPut(currentField);
+        // now X symbol should be added, assign it to inputSymbol variable
+
+        int insertIndex = getInsertIndexForCoordinate(nativeCoordinate);
+        char currentChar = currentField.charAt(insertIndex);
+        if (currentChar != SPACE)
+            throw new Exception("This cell is occupied! Choose another one!");
+
+        return insertAndReturnField(insertIndex, inputSymbol, currentField);
+    }
+
+    private static char checkWhatSymbolWeShouldPut(String s) {
+        int counterX = 0;
+        int counterO = 0;
+        for (int i = 0; i < s.length(); i++){
+            if (s.charAt(i) == X){
+                counterX++;
+            } else if (s.charAt(i) == O){
+                counterO++;
+            }
+        }
+        if (counterX <= counterO){
+            return 'X';
+        } else {
+            return 'O';
+        }
+    }
+
+
+    private static String insertAndReturnField(int insertIndex, char inputSymbol, String currentField) {
+
+        // you could transform string (currentField) to char array and replace current symbol on insertIndex to inputSymbol
+        List<Character> charArrayFromInputString = new ArrayList<>();
+        for(int i = 0; i < currentField.length(); i++){
+            charArrayFromInputString.add(currentField.charAt(i));
+        }
+
+        charArrayFromInputString.set(insertIndex, inputSymbol);
+
+        // and reassamble string from this modified array
+        return convertCharArrayToString(charArrayFromInputString);
+    }
+
+    private static String convertCharArrayToString(List<Character> array) {
+        StringBuilder sb = new StringBuilder();
+        for (Character ch : array)
+            sb.append(ch);
+
+        return sb.toString();
+    }
+
+    private static int getInsertIndexForCoordinate(Coordinate nativeCoordinate) {
+        int index = nativeCoordinate.x + nativeCoordinate.y * 3;
+        return index;
+    }
+
+    private static void printField(String s) {
+        System.out.println("---------");
+        for (int y = 0; y < FIELD_SIZE; y++) {
+            printFieldRow(y, s);
+        }
+        System.out.println("---------");
+    }
+
+    private static void printFieldRow(int y, String s) {
+        String pre = "| ";
+        String symbols = printFieldRowSymbols(y, s);
+        String retVal = pre + symbols + "|";
+        System.out.println(retVal);
+    }
+
+    private static String printFieldRowSymbols(int y, String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int x = 0; x < FIELD_SIZE; x++) {
+            sb.append(s.charAt(x + FIELD_SIZE * y));
+            sb.append(SPACE);
+        }
+        return sb.toString();
+    }
+
+    private static boolean checkField(String s) {
+        boolean xRes = check(s, X);
+        boolean oRes = check(s, O);
+        boolean hasEmptyCells = checkHasEmpty(s);
+        boolean isCountersOk = checkAmount(s);
+
+        if (isNotFinished(xRes, oRes, hasEmptyCells, isCountersOk)) {
+            return true;
+        } else if (isDraw(hasEmptyCells, xRes, oRes, isCountersOk)) {
+            System.out.println("Draw");
+            return false;
+        } else if (isImpossible(xRes, oRes, isCountersOk)) {
+            System.out.println("It is impossible");
+            return false;
+        } else if (isSymbolWinsAnother(xRes, oRes, isCountersOk)) {
+            System.out.println("X wins");
+            return false;
+        } else if (isSymbolWinsAnother(oRes, xRes, isCountersOk)) {
+            System.out.println("O wins");
+            return false;
+        } else {
+            return false; //impossible case
+        }
+    }
+
+    private static Coordinate transformUserCoordinateToNative(Coordinate userInput) {
+        int userX = userInput.x;
+        int userY = userInput.y;
+        int ourX = userX - 1;
+        int ourY = 3 - userY;
+        return new Coordinate(ourX, ourY);
+    }
+
+    private static Coordinate getUserInput() {
+        int x;
+        int y;
+        boolean userInputIncorrect = true;
+        Coordinate retVal = null;
+        while (userInputIncorrect) {
+            try {
+                System.out.println("Enter the coordinates: ");
+                BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+
+                String s = reader.readLine();
+                //проверяю, что ввели строку из 3х символов
+
+                if (s.length() != 3) {
+                    System.out.println("You should enter numbers!");
+                } else {
+                    x = Integer.parseInt(String.valueOf(s.charAt(0)));
+                    y = Integer.parseInt(String.valueOf(s.charAt(2)));
+                    if (x < 1 || x > 3 || y < 1 || y > 3) {
+                        System.out.println("Coordinates should be from 1 to 3!");
+                    } else {
+                        userInputIncorrect = false;
+                        retVal = new Coordinate(x, y);
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println("You should enter numbers!");
+            }
+        }
+        // write code to set x and y
+        //get input line from user
+        //check if inputs are numbers
+        //check if that numbers are between 0 and 4
+        return retVal;
+    }
+
+    private static boolean isSymbolWinsAnother(boolean symbolRes, boolean anotherSymbolRes, boolean isCountersOk) {
+        return symbolRes && !anotherSymbolRes && isCountersOk;
+    }
+
+    private static boolean isImpossible(boolean xRes, boolean oRes, boolean isCountersOk) {
+        return (xRes && oRes) || !isCountersOk;
+    }
+
+    private static boolean isDraw(boolean hasEmptyCells, boolean xRes, boolean oRes, boolean isCountersOk) {
+        return !hasEmptyCells && !xRes && !oRes && isCountersOk;
+    }
+
+    private static boolean isNotFinished(boolean xRes, boolean oRes, boolean hasEmpty, boolean isCountersOk) {
+        return hasEmpty && isCountersOk && !xRes && !oRes;
+    }
+
+    private static boolean checkAmount(String s) {
+        int counterX = 0;
+        int counterO = 0;
+        for (int i = 0; i < s.length(); i++){
+            if (s.charAt(i) == X){
+                counterX++;
+            } else if (s.charAt(i) == O){
+                counterO++;
+            }
+        }
+        return Math.abs(counterO - counterX) <= 1;
+    }
+
+    private static boolean checkHasEmpty(String s) {
+        for( int i = 0; i < s.length(); i++) {
+            if (s.charAt(i) == SPACE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private static boolean check(String s, char symbol) {
+        if ((s.charAt(getCellNumber(0, 0)) == symbol) && (s.charAt(getCellNumber(0, 1)) == symbol) && (s.charAt(getCellNumber(0, 2)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(1, 0)) == symbol) && (s.charAt(getCellNumber(1, 1)) == symbol) && (s.charAt(getCellNumber(1, 2)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(2, 0)) == symbol) && (s.charAt(getCellNumber(2, 1)) == symbol) && (s.charAt(getCellNumber(2, 2)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(0, 0)) == symbol) && (s.charAt(getCellNumber(1,0)) == symbol) && (s.charAt(getCellNumber(2, 0)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(0, 1)) == symbol) && (s.charAt(getCellNumber(1, 1)) == symbol) && (s.charAt(getCellNumber(2, 1)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(0, 2)) == symbol) && (s.charAt(getCellNumber(1,2)) == symbol) && (s.charAt(getCellNumber(2, 2)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(0,0)) == symbol) && (s.charAt(getCellNumber(1,1)) == symbol) && (s.charAt(getCellNumber(2,2)) == symbol)){
+            return true;
+        } else if ((s.charAt(getCellNumber(2,0)) == symbol) && (s.charAt(getCellNumber(1, 1)) == symbol) && (s.charAt(getCellNumber(0,2)) == symbol)){
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static int getCellNumber(int column, int row) {
+        // for 2, 1 = (row * size) + column = 1  * 3 + 2 = 5
+        return row * FIELD_SIZE + column;
+    }
+}
